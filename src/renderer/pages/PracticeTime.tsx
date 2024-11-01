@@ -1,13 +1,17 @@
 import { ArrowDownIcon, ArrowUpIcon, ChevronDownIcon, MenuButton } from '@chakra-ui/icons';
 import {
-  Button, Center, Divider,
+  Button,
+  Center,
+  Divider,
   Flex,
   HStack,
-  IconButton, Input,
+  IconButton,
+  Input,
   Menu,
   MenuGroup,
   MenuItem,
-  MenuList, Select,
+  MenuList,
+  Select,
   Table,
   TableContainer,
   Tbody,
@@ -15,7 +19,8 @@ import {
   Text,
   Th,
   Thead,
-  Tr, useToast
+  Tr,
+  useToast
 } from '@chakra-ui/react';
 import {
   createColumnHelper,
@@ -25,18 +30,21 @@ import {
   useReactTable
 } from '@tanstack/react-table';
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { MdCleaningServices, MdFileOpen, MdSave } from 'react-icons/md';
+import { MdCleaningServices, MdFileOpen, MdOutbound, MdSave } from 'react-icons/md';
+import * as builder from 'xmlbuilder';
 import { Page } from '../common/Page';
 import { database, Playlist } from '../database';
 import { useSavePlaylistModal } from '../hooks/SavePlaylistModal';
 import { HydratedDanceVariant, useSelectDanceModal } from '../hooks/SelectDanceModal';
 import { useSelectPlaylistModal } from '../hooks/SelectPlaylistModal';
 import { JukeboxState } from '../hooks/useJukebox';
+import { useSongPathEncoder } from '../hooks/useSongPathEncoder';
 import { JukeboxContext } from '../providers/JukeboxProvider';
 
 export const PracticeTime = () => {
   const toast = useToast();
   const { setJukeboxState } = useContext(JukeboxContext);
+  const songPathEncoder = useSongPathEncoder();
   const [loaded, setLoaded] = useState(false);
   const [tracks, setTracks] = useState<HydratedDanceVariant[]>([]);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
@@ -190,6 +198,38 @@ export const PracticeTime = () => {
     setShowMode(!showMode);
   };
 
+  const exportPlaylist = () => {
+    window.electron.ipcRenderer.once('exportPlaylist', (arg: any) => {
+      if(arg.path) {
+        toast({
+          title: `Playlist exported to "${arg.path}"`,
+          status: 'success',
+          duration: 2000,
+          isClosable: true
+        });
+      }
+    });
+
+    const xmlObject = {
+      playlist: {
+        '@version': '1',
+        '@xmlns': 'http://xspf.org/ns/0/',
+        trackList: {
+          track: tracks.map(track => ({
+            title: track.song.title,
+            location: songPathEncoder(track.song).replace('showtime://', 'file://')
+          }))
+        }
+      }
+    };
+
+    const xml = builder.create(xmlObject).end({ pretty: true });
+
+    window.electron.ipcRenderer.sendMessage('exportPlaylist', {
+      xml
+    })
+  };
+
   return (
     <Page name={showMode ? 'Showtime!' : 'Practice Time'}>
       <TableContainer whiteSpace={'wrap'} width={'100%'}>
@@ -206,6 +246,7 @@ export const PracticeTime = () => {
               <MenuList>
                 {!showMode &&<MenuItem icon={<MdFileOpen />} onClick={selectPlaylistModalDisclosure.onOpen}>Load...</MenuItem>}
                 {!showMode && <MenuItem icon={<MdSave />} onClick={savePlaylistModalDisclosure.onOpen}>Save...</MenuItem>}
+                {!showMode && <MenuItem icon={<MdOutbound />} onClick={exportPlaylist}>Export...</MenuItem>}
                 {!showMode && <MenuItem icon={<MdCleaningServices />} onClick={() => setTracks([])}>Clear</MenuItem>}
                 <MenuGroup title="Showtime">
                   <MenuItem onClick={toggleShow}>{showMode ? 'Stop show' : 'Run show!'}</MenuItem>

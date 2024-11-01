@@ -76,6 +76,25 @@ export const setupIPC = () => {
     event.reply('getAudioFilesInDirectory', getAudioFiles(paths?.[0]))
   })
 
+  ipcMain.on('exportPlaylist', async (event, arg) => {
+    const {playlistTitle, xml} = arg
+    const path = dialog.showSaveDialogSync({
+      message: 'Select file to export playlist to',
+      defaultPath: `${playlistTitle ?? 'Playlist'}.xspf`,
+      filters: [
+        { name: 'XSPF', extensions: ['xspf'] },
+      ],
+    })
+
+    console.log('exporting playlist to', path)
+
+    if(path) {
+      fs.writeFileSync(path, xml)
+    }
+
+    event.reply('exportPlaylist', { path })
+  });
+
   ipcMain.on('validateLibrary', async (event, arg) => {
     console.log('validateLibrary', arg)
     const {songs} = arg as {songs: Song[]}

@@ -5,6 +5,7 @@ import { Dance, DanceVariant, Song } from '../database';
 import { AudioPlayer } from '../pages/AudioPlayerHowl';
 import { UserSettingsContext } from '../providers/UserSettingsProvider';
 import { HydratedDanceVariant } from './SelectDanceModal';
+import { useSongPathEncoder } from './useSongPathEncoder';
 
 export type JukeboxState = {
   showJukebox: boolean;
@@ -53,6 +54,7 @@ export const useJukebox = (): JukeboxReturnType => {
 
 const Jukebox = ({ state, setState, initialFocusRef }: JukeboxProps) => {
   const [userSettings] = useContext(UserSettingsContext);
+  const songPathEncoder = useSongPathEncoder();
   if (!state.showJukebox || !state.song) {
     return null;
   }
@@ -103,35 +105,6 @@ const Jukebox = ({ state, setState, initialFocusRef }: JukeboxProps) => {
     }
   };
 
-  const windowsFilePathTShowtimeUri = (filePath: string)=> {
-    // Replace backslashes with forward slashes
-    const pathWithForwardSlashes = filePath.replace(/\\/g, '/');
-
-    // Extract the drive letter (e.g., "C:") and keep it unencoded
-    const driveLetterMatch = pathWithForwardSlashes.match(/^([a-zA-Z]:)/);
-    const driveLetter = driveLetterMatch ? driveLetterMatch[0] : '';
-
-    // Get the rest of the path
-    const restOfPath = pathWithForwardSlashes.slice(driveLetter.length);
-
-    // Encode the rest of the path
-    const encodedRestOfPath = encodeURIComponent(restOfPath)
-      .replace(/%5C/g, '/') // Replace encoded backslashes with forward slashes
-      .replace(/%3A/g, ':') // Ensure colons are decoded back to original
-      .replace(/%2F/g, '/'); // Ensure forward slashes are decoded back to original
-
-    // Construct the full file URL
-    return `showtime:///${driveLetter}${encodedRestOfPath}`;
-  }
-
-  const getEncodeURI = (song: Song) => {
-    if(userSettings.isWindows) {
-      return windowsFilePathTShowtimeUri(song.path)
-    } else {
-      return encodeURI(`showtime://${song.path}`);
-    }
-  }
-
   return (
     <Box width={'100%'}>
       <HStack justifyContent={'flex-end'} marginTop={'10px'}>
@@ -167,7 +140,7 @@ const Jukebox = ({ state, setState, initialFocusRef }: JukeboxProps) => {
       </>
       <AudioPlayer
         initialFocusRef={initialFocusRef}
-        src={getEncodeURI(state.song)} onEnd={onEnd} />
+        src={songPathEncoder(state.song)} onEnd={onEnd} />
     </Box>
   );
 };

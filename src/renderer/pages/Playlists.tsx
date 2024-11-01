@@ -25,15 +25,19 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import React, { useMemo, useState } from 'react';
 import { MdAppRegistration, MdDelete } from 'react-icons/md';
 import { useNavigate } from 'react-router-dom';
+import * as builder from 'xmlbuilder';
 import { Filter } from '../common/Filter';
 import { Page } from '../common/Page';
-import { Dance, database, Playlist } from '../database';
+import { Dance, database, Playlist, Song } from '../database';
 import { useSavePlaylistModal } from '../hooks/SavePlaylistModal';
+import { HydratedDanceVariant } from '../hooks/SelectDanceModal';
+import { useSongPathEncoder } from '../hooks/useSongPathEncoder';
 import { confirmAction } from '../utils/ConfirmAction';
 
 export const Playlists = () => {
   const navigate = useNavigate()
   const toast = useToast();
+  const songPathEncoder = useSongPathEncoder()
   const playlists = useLiveQuery(() => database.playlists.toArray());
   const [savePlaylistModal, PlaylistModal] = useSavePlaylistModal();
   const [playlistToEdit, setPlaylistToEdit] = useState<Playlist | undefined>();
@@ -58,6 +62,7 @@ export const Playlists = () => {
             savePlaylistModal.onOpen();
           }}>Edit</Button>
           <Button onClick={confirmAction(`Delete playlist,  ${info.row.original.title}?`, () => deletePlaylist(info.row.original.id))}>Delete</Button>
+          <Button onClick={() => exportPlaylist(info.row.original)}>Export...</Button>
         </HStack>
       )
     })
@@ -81,6 +86,41 @@ export const Playlists = () => {
       }
     }
   );
+
+  const exportPlaylist = async (playlist: Playlist) => {
+    window.electron.ipcRenderer.once('exportPlaylist', (arg: any) => {
+      if(arg.path){
+        toast({
+          title: `Playlist exported to "${arg.path}"`,
+          status: 'success',
+          duration: 2000,
+          isClosable: true
+        });
+      }
+    });
+
+    const tracks: HydratedDanceVariant[] = JSON.parse(playlist.tracksString);
+
+    const xmlObject = {
+      playlist: {
+        '@version': '1',
+        '@xmlns': 'http://xspf.org/ns/0/',
+        trackList: {
+          track: tracks.map(track => ({
+            title: track.song.title,
+            location: songPathEncoder(track.song).replace('showtime://', 'file://')
+          }))
+        }
+      }
+    };
+
+    const xml = builder.create(xmlObject).end({ pretty: true });
+
+    window.electron.ipcRenderer.sendMessage('exportPlaylist', {
+      playlistTitle: playlist.title,
+      xml
+    })
+  }
 
   const updatePlaylistTitle = async (playlist: Playlist) => {
     await database.playlists.update(playlist.id, {

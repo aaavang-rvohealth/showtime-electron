@@ -1,6 +1,4 @@
 import Dexie, { EntityTable } from 'dexie';
-import dexieRelationships from 'dexie-relationships';
-import relationships from 'dexie-relationships'
 
 export type Song = {
   id: number;
@@ -35,7 +33,7 @@ export type PlaylistDance = {
   order: string;
 }
 
-export const database = new Dexie("showtime", {addons: [dexieRelationships]}) as Dexie & {
+export const database = new Dexie("showtime") as Dexie & {
   songs: EntityTable<Song, 'id'>,
   dances: EntityTable<Dance, 'id'>,
   danceVariants: EntityTable<DanceVariant, 'id'>,
@@ -47,8 +45,8 @@ database.version(1).stores({
   songs: "++id, title, path",
   dances: "++id, title, defaultSongId",
   playlists: "++id, title",
-  danceVariants: "++id, title, danceId -> dances.id, songId -> songs.id",
-  playlistDances: "++id, playlistId -> playlists.id, danceVariantId -> danceVariants.id, order",
+  danceVariants: "++id, title, danceId, songId",
+  playlistDances: "++id, playlistId, danceVariantId, order",
 });
 
 database.open().catch(function(error){
