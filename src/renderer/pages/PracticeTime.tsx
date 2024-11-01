@@ -178,7 +178,7 @@ export const PracticeTime = () => {
 
   const savePlaylist = async (playlist: Playlist) => {
     playlist.tracksString = JSON.stringify(tracks);
-    await database.playlists.add(playlist);
+    await database.playlists.put(playlist);
   };
 
   const loadPlaylist = async (playlist: Playlist) => {

@@ -1,0 +1,18 @@
+{
+  "name": "showtime-electron",
+  "version": "1.0.0",
+  "description": "A simple app for running dance shows",
+  "license": "MIT",
+  "author": {
+    "name": "Alexander Aavang",
+    "email": "alex.aavang@gmail.com",
+    "url": "https://github.com/aaavang-rvohealth/showtime-electron"
+  },
+  "main": "./dist/main/main.js",
+  "scripts": {
+    "rebuild": "node -r ts-node/register ../../.erb/scripts/electron-rebuild.js",
+    "postinstall": "npm run rebuild && npm run link-modules",
+    "link-modules": "node -r ts-node/register ../../.erb/scripts/link-modules.ts"
+  },
+  "dependencies": {}
+}

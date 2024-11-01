@@ -1,5 +1,5 @@
 import {
-  Button,
+  Button, Heading,
   Input,
   Modal,
   ModalBody,
@@ -15,6 +15,7 @@ import {
 } from '@chakra-ui/react';
 import React, { useCallback, useState } from 'react';
 import { database, Playlist } from '../database';
+import { confirmAction } from '../utils/ConfirmAction';
 
 export type SavePlaylistModalProps = {
   onSubmit: (data: Playlist) => void;
@@ -39,15 +40,13 @@ const SavePlaylistModal = ({ onSubmit, disclosure, initialValue }: SavePlaylistM
   const [newPlaylist, setNewPlaylist] = useState(initialValue ?? {} as Partial<Playlist>);
 
   const wrappedOnSubmit = useCallback(async () => {
-    const existingPlaylist = await database.playlists.where('title').equals(newPlaylist.title!).first();
-    if (!newPlaylist.id && existingPlaylist) {
-      toast({
-        title: 'Playlist already exists',
-        description: 'A playlist with that title already exists. Please choose a different title.',
-        status: 'error',
-        duration: 2000,
-        isClosable: true,
-      })
+    const existingPlaylist = await database.playlists.where('title').equalsIgnoreCase(newPlaylist.title!).first();
+    if (existingPlaylist) {
+      console.log('existingPlaylist', existingPlaylist);
+      confirmAction(`Playlist with title "${newPlaylist.title}", already exists. Overwrite?`, () => {
+        onSubmit({ ...newPlaylist, id: existingPlaylist.id } as Playlist);
+        disclosure.onClose();
+      })()
       return;
     }
 
@@ -62,15 +61,19 @@ const SavePlaylistModal = ({ onSubmit, disclosure, initialValue }: SavePlaylistM
         <ModalHeader>Save Playlist</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
-          <VStack gap={'5px'}>
+          <VStack gap={'15px'}>
             <>
-              <Text key={'title-label'}>Title</Text>
+              <Heading as={'h2'} size={'md'} key={'title-label'}>Title</Heading>
               <Input key={'title-input'} value={newPlaylist.title ?? ''}
                      onChange={(e) => {
                        const newState = { ...newPlaylist };
                        newState.title = e.target.value;
                        setNewPlaylist(newState);
                      }} />
+            </>
+            <>
+              <Heading as={'h2'} size={'md'} key={'track-label'}>Tracks</Heading>
+              <Text key={'track-msg'}>Edit a playlist's tracks by loading it and resaving it with the same name.</Text>
             </>
           </VStack>
         </ModalBody>
