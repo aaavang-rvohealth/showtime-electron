@@ -8,6 +8,7 @@ import { HydratedDanceVariant } from './SelectDanceModal';
 import { useSongPathEncoder } from './useSongPathEncoder';
 
 export type JukeboxState = {
+  showMode?: boolean;
   showJukebox: boolean;
   song?: Song
   dance?: Dance
@@ -129,6 +130,7 @@ const Jukebox = ({ state, setState, initialFocusRef }: JukeboxProps) => {
             <Flex flex={state.playlist ? '0 0 60%' : '1'} alignItems={'center'} justifyContent={'center'}>
               <VStack textAlign={'center'}>
                 <Badge colorScheme={ userSettings.enableFineGrainAutoplay ? 'green' : 'gray' }>Auto Play {userSettings.enableFineGrainAutoplay && state.autoplay ? 'Enabled' : 'Disabled'}</Badge>
+                {userSettings.useHTML5Audio && <Badge colorScheme={'red' }>HTML5 Enabled</Badge>}
                 {state.currentTrackIndex !== undefined && state.playlist && (
                   <Heading as={'h2'} size={'md'}>{`${state.currentTrackIndex + 1}/${state.playlist.length}`}</Heading>)}
                 {state.dance && (<Heading as={'h2'} size={'lg'}>{state.dance.title}</Heading>)}
@@ -146,6 +148,7 @@ const Jukebox = ({ state, setState, initialFocusRef }: JukeboxProps) => {
       </>
       <AudioPlayer
         initialFocusRef={initialFocusRef}
+        showMode={state.showMode}
         autoPlay={userSettings.enableFineGrainAutoplay && state.autoplay}
         src={songPathEncoder(state.song)} onEnd={onEnd} />
     </Box>

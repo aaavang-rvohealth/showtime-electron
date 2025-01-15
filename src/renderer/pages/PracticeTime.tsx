@@ -125,6 +125,7 @@ export const PracticeTime = () => {
             variant={'outline'}
             onClick={() => {
               const newJukeboxState: JukeboxState = {
+                showMode,
                 closeOnEnd: true,
                 onEnd: onPlaylistEnd,
                 showJukebox: true,
@@ -145,8 +146,6 @@ export const PracticeTime = () => {
       )
     })
   ], [showMode]);
-
-  console.log('settings', userSettings)
 
   const table = useReactTable(
     {
