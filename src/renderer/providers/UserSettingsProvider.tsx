@@ -2,12 +2,12 @@ import { createContext, useEffect, useState } from 'react';
 
 
 export type UserSettings = {
-  defaultAutoplay: boolean
+  enableFineGrainAutoplay: boolean
   isWindows: boolean
 }
 
 const defaultUserSettings = {
-  defaultAutoplay: false,
+  enableFineGrainAutoplay: false,
   isWindows: true
 };
 
@@ -19,11 +19,13 @@ export const useUserSettings = () => {
   useEffect(() => {
     const storedUserSettings = localStorage.getItem('userSettings');
     if (storedUserSettings) {
+      console.log('loading settings', storedUserSettings)
       userState[1](JSON.parse(storedUserSettings));
     }
   }, []);
 
   useEffect(() => {
+    console.log('saving settings', userState[0])
     localStorage.setItem('userSettings', JSON.stringify(userState[0]));
   }, [userState[0]]);
 

@@ -16,6 +16,7 @@ export type JukeboxState = {
   closeOnEnd?: boolean
   currentTrackIndex?: number
   playlist?: HydratedDanceVariant[]
+  autoplay?: boolean
 }
 
 type JukeboxProps = {
@@ -53,6 +54,7 @@ export const useJukebox = (): JukeboxReturnType => {
 };
 
 const Jukebox = ({ state, setState, initialFocusRef }: JukeboxProps) => {
+  console.log('jukebox state', state)
   const [userSettings] = useContext(UserSettingsContext);
   const songPathEncoder = useSongPathEncoder();
   if (!state.showJukebox || !state.song) {
@@ -61,24 +63,28 @@ const Jukebox = ({ state, setState, initialFocusRef }: JukeboxProps) => {
 
   const nextDance = () => {
     if (state.playlist && state.currentTrackIndex! < state.playlist.length - 1) {
+      const nextSong = state.playlist[state.currentTrackIndex! + 1];
       setState({
         ...state,
         currentTrackIndex: state.currentTrackIndex! + 1,
-        song: state.playlist[state.currentTrackIndex! + 1].song,
-        dance: state.playlist[state.currentTrackIndex! + 1].dance,
-        variant: state.playlist[state.currentTrackIndex! + 1].danceVariant
+        song: nextSong.song,
+        dance: nextSong.dance,
+        variant: nextSong.danceVariant,
+        autoplay: nextSong.autoplay
       });
     }
   };
 
   const previousDance = () => {
     if (state.playlist && state.currentTrackIndex! > 0) {
+      const previousSong = state.playlist[state.currentTrackIndex! - 1];
       setState({
         ...state,
         currentTrackIndex: state.currentTrackIndex! - 1,
-        song: state.playlist[state.currentTrackIndex! - 1].song,
-        dance: state.playlist[state.currentTrackIndex! - 1].dance,
-        variant: state.playlist[state.currentTrackIndex! - 1].danceVariant
+        song: previousSong.song,
+        dance: previousSong.dance,
+        variant: previousSong.danceVariant,
+        autoplay: previousSong.autoplay
       });
     }
   };
@@ -122,7 +128,7 @@ const Jukebox = ({ state, setState, initialFocusRef }: JukeboxProps) => {
             </VStack>}
             <Flex flex={state.playlist ? '0 0 60%' : '1'} alignItems={'center'} justifyContent={'center'}>
               <VStack textAlign={'center'}>
-                <Badge colorScheme={ userSettings.defaultAutoplay ? 'green' : 'gray' }>Auto Play {userSettings.defaultAutoplay ? 'Enabled' : 'Disabled'}</Badge>
+                <Badge colorScheme={ userSettings.enableFineGrainAutoplay ? 'green' : 'gray' }>Auto Play {userSettings.enableFineGrainAutoplay && state.autoplay ? 'Enabled' : 'Disabled'}</Badge>
                 {state.currentTrackIndex !== undefined && state.playlist && (
                   <Heading as={'h2'} size={'md'}>{`${state.currentTrackIndex + 1}/${state.playlist.length}`}</Heading>)}
                 {state.dance && (<Heading as={'h2'} size={'lg'}>{state.dance.title}</Heading>)}
@@ -140,6 +146,7 @@ const Jukebox = ({ state, setState, initialFocusRef }: JukeboxProps) => {
       </>
       <AudioPlayer
         initialFocusRef={initialFocusRef}
+        autoPlay={userSettings.enableFineGrainAutoplay && state.autoplay}
         src={songPathEncoder(state.song)} onEnd={onEnd} />
     </Box>
   );

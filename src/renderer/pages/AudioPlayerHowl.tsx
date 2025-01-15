@@ -25,7 +25,7 @@ export const AudioPlayer = (props: AudioPlayerHowlProps) => {
     if (howl) {
       howl.on("load", () => {
         setCurrentTime(0)
-        if(props.autoPlay || userSettings.defaultAutoplay) {
+        if(props.autoPlay || userSettings.enableFineGrainAutoplay) {
           howl.volume(1)
           howl.play();
           setIsPlaying(true)

@@ -27,13 +27,15 @@ export const Settings = () => {
         <CardBody>
           <FormControl>
             <HStack gap={'15px'} alignItems={'center'} textAlign={'center'}>
-              <Text>Default Autoplay</Text>
+              <Text>Enable Fine-Grained Autoplay</Text>
               <Checkbox
-                isChecked={userSettings.defaultAutoplay}
-                onChange={(e) => setUserSettings({ ...userSettings, defaultAutoplay: e.target.checked })}
+                isChecked={userSettings.enableFineGrainAutoplay}
+                onChange={(e) => {
+                  setUserSettings({ ...userSettings, enableFineGrainAutoplay: e.target.checked });
+                }}
               />
             </HStack>
-            <Text fontSize={'xs'}>When enabled, the jukebox will automatically start playing when songs are loaded.</Text>
+            <Text fontSize={'xs'}>When enabled, you can mark certain tracks to autoplay.</Text>
           </FormControl>
         </CardBody>
       </Card>

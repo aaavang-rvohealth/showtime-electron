@@ -17,6 +17,7 @@ import React, { useState } from 'react';
 import AsyncSelect from 'react-select/async';
 import { database, Playlist } from '../database';
 import { Option } from '../types/Option';
+import {useLiveQuery} from "dexie-react-hooks";
 
 export type SelectPlaylistModalProps = {
   onSubmit: (data: Playlist) => void;
@@ -35,6 +36,7 @@ export const useSelectPlaylistModal = (): [ReturnType<typeof useDisclosure>, (pr
 
 const SelectPlaylistModal = ({ onSubmit, disclosure }: SelectPlaylistModalProps) => {
   const [selectedPlaylist, setSelectedPlaylist] = useState({} as Partial<Playlist>);
+  const playlists = useLiveQuery(() => database.playlists.toArray())
 
   const wrappedOnSubmit = async () => {
     onSubmit(selectedPlaylist as Playlist);
@@ -42,9 +44,7 @@ const SelectPlaylistModal = ({ onSubmit, disclosure }: SelectPlaylistModalProps)
   };
 
   const loadPlaylistOptions = async (inputValue: string): Promise<Option<Playlist>[]> => {
-    const playlists = await database.playlists.where('title').startsWithIgnoreCase(inputValue).toArray();
-
-    return playlists.map((playlist) => ({ value: playlist, label: playlist.title }));
+    return playlists?.filter(p => p.title.toLowerCase().includes(inputValue.toLowerCase())).map((playlist) => ({ value: playlist, label: playlist.title })) ?? [];
   }
 
   return (

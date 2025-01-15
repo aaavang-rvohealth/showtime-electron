@@ -39,6 +39,7 @@ const DanceVariantModal: React.FC<DanceVariantModalProps> = ({
 }) => {
   const [newVariant, setNewVariant] = useState(initialValue ?? {} as Partial<DanceVariant>)
   const defaultSong = useLiveQuery(() => database.songs.get(newVariant.songId ?? -1), [newVariant.songId])
+  const songs = useLiveQuery(() => database.songs.toArray())
 
   const currentOnClose = disclosure.onClose
   disclosure.onClose = () => {
@@ -56,12 +57,7 @@ const DanceVariantModal: React.FC<DanceVariantModalProps> = ({
   }
 
   const loadSongOptions = async (inputValue: string): Promise<Option<number>[]> => {
-    const songs = await database.songs
-      .where('title')
-      .startsWithIgnoreCase(inputValue)
-      .toArray();
-
-    return songs.map((song) => ({ value: song.id, label: song.title }));
+    return songs?.filter(s => s.title.toLowerCase().includes(inputValue.toLowerCase())).map((song) => ({ value: song.id, label: song.title })) ?? [];
   }
 
   return (

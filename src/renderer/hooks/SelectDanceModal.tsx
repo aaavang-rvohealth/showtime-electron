@@ -12,7 +12,7 @@ import {
   VStack
 } from '@chakra-ui/react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import React, { useState } from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import AsyncSelect from 'react-select/async';
 import { Dance, DanceVariant, database, Song } from '../database';
 import { Option } from '../types/Option';
@@ -30,6 +30,7 @@ export type HydratedDanceVariant = {
   song: Song;
   dance: Dance;
   danceVariant: DanceVariant;
+  autoplay: boolean;
 }
 
 export const useSelectDanceModal = (): [ReturnType<typeof useDisclosure>, (props: SelectModalHookProps) => React.ReactNode] => {
@@ -57,12 +58,12 @@ const SelectDanceModal: React.FC<SelectDanceModalProps> = ({
   };
 
   const loadDanceOptions = async (inputValue: string): Promise<Option<Dance>[]> => {
-    if(inputValue.length === 0) {
+    if(inputValue.length === 0 || inputValue == "") {
       return dances!.map((dance) => ({ value: dance, label: dance.title }));
     }
 
     return dances!.filter(d => d.title.toLowerCase().includes(inputValue.toLowerCase())).map((dance) => ({ value: dance, label: dance.title }));
-  };
+  }
 
   const loadDanceVariantOptions = async (inputValue: string): Promise<Option<DanceVariant>[]> => {
 
@@ -78,11 +79,15 @@ const SelectDanceModal: React.FC<SelectDanceModalProps> = ({
     }
   };
 
+  if(!dances) {
+    return <></>
+  }
+
   return (
     <Modal isOpen={disclosure.isOpen} onClose={disclosure.onClose}>
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>New Dance</ModalHeader>
+        <ModalHeader>Select Dance</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <VStack gap={'5px'} width={'100%'}>

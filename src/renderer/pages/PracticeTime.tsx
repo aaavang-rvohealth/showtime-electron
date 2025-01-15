@@ -1,7 +1,7 @@
 import { ArrowDownIcon, ArrowUpIcon, ChevronDownIcon, MenuButton } from '@chakra-ui/icons';
 import {
   Button,
-  Center,
+  Center, Checkbox,
   Divider,
   Flex,
   HStack,
@@ -29,7 +29,7 @@ import {
   getPaginationRowModel,
   useReactTable
 } from '@tanstack/react-table';
-import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { MdCleaningServices, MdFileOpen, MdOutbound, MdSave } from 'react-icons/md';
 import * as builder from 'xmlbuilder';
 import { Page } from '../common/Page';
@@ -40,6 +40,7 @@ import { useSelectPlaylistModal } from '../hooks/SelectPlaylistModal';
 import { JukeboxState } from '../hooks/useJukebox';
 import { useSongPathEncoder } from '../hooks/useSongPathEncoder';
 import { JukeboxContext } from '../providers/JukeboxProvider';
+import { UserSettingsContext, useUserSettings } from '../providers/UserSettingsProvider';
 
 export const PracticeTime = () => {
   const toast = useToast();
@@ -52,6 +53,7 @@ export const PracticeTime = () => {
   const [savePlaylistModalDisclosure, SavePlaylistModal] = useSavePlaylistModal();
   const [selectPlaylistModalDisclosure, SelectPlaylistModal] = useSelectPlaylistModal();
   const [showMode, setShowMode] = useState(false);
+  const [userSettings] = useContext(UserSettingsContext)
 
   const tracksRef = useRef(tracks);
   useEffect(() => {
@@ -106,6 +108,13 @@ export const PracticeTime = () => {
       cell: (info) => info.getValue(),
       header: 'Song'
     }),
+    columnHelper.accessor('autoplay', {
+      cell: (info) => <Checkbox isDisabled={showMode} isChecked={info.row.original.autoplay} onChange={() => {
+        info.row.original.autoplay = !info.row.original.autoplay;
+        setTracks(info.table.getRowModel().rows.map(r => r.original))
+      }} /> ,
+      header: 'Autoplay'
+    }),
     columnHelper.display({
       id: 'actions',
       header: 'Actions',
@@ -123,7 +132,8 @@ export const PracticeTime = () => {
                 variant: info.row.original.danceVariant,
                 song: info.row.original.song,
                 currentTrackIndex: info.row.index,
-                playlist: tracksRef.current
+                playlist: info.table.getRowModel().rows.map(r => r.original),
+                autoplay: info.row.original.autoplay
               };
               setJukeboxState(newJukeboxState);
               setCurrentTrackIndex(info.row.index);
@@ -136,16 +146,22 @@ export const PracticeTime = () => {
     })
   ], [showMode]);
 
+  console.log('settings', userSettings)
+
   const table = useReactTable(
     {
       columns,
       data: tracks,
       getCoreRowModel: getCoreRowModel(),
-      getPaginationRowModel: getPaginationRowModel(),
       columnResizeMode: 'onChange',
-      columnResizeDirection: 'ltr'
+      columnResizeDirection: 'ltr',
+      initialState: {
+        columnVisibility: {
+          autoplay: userSettings.enableFineGrainAutoplay
+        }
+      }
     }
-  );
+  )
 
   const moveSongUp = (index: number) => {
     if (index <= 0) {
@@ -248,6 +264,10 @@ export const PracticeTime = () => {
                 {!showMode && <MenuItem icon={<MdSave />} onClick={savePlaylistModalDisclosure.onOpen}>Save...</MenuItem>}
                 {!showMode && <MenuItem icon={<MdOutbound />} onClick={exportPlaylist}>Export...</MenuItem>}
                 {!showMode && <MenuItem icon={<MdCleaningServices />} onClick={() => setTracks([])}>Clear</MenuItem>}
+                {!showMode && <MenuItem icon={<MdCleaningServices />} onClick={() => setTracks(tracks.map(t => {
+                  t.autoplay = false;
+                  return t;
+                }))}>Clear Autoplay</MenuItem>}
                 <MenuGroup title="Showtime">
                   <MenuItem onClick={toggleShow}>{showMode ? 'Stop show' : 'Run show!'}</MenuItem>
                 </MenuGroup>
@@ -293,68 +313,6 @@ export const PracticeTime = () => {
             ))}
           </Tbody>
         </Table>
-        <HStack gap={'15px'} justifyContent={'center'}>
-        <Button
-          onClick={() => table.setPageIndex(0)}
-          isDisabled={!table.getCanPreviousPage()}
-        >
-          {'<<'}
-        </Button>
-        <Button
-          onClick={() => table.previousPage()}
-          isDisabled={!table.getCanPreviousPage()}
-        >
-          {'<'}
-        </Button>
-        <Button
-          onClick={() => table.nextPage()}
-          isDisabled={!table.getCanNextPage()}
-        >
-          {'>'}
-        </Button>
-        <Button
-          onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-          isDisabled={!table.getCanNextPage()}
-        >
-          {'>>'}
-        </Button>
-        <Center gap={'5px'}>
-          <Text>Page</Text>
-          <strong>
-            {table.getState().pagination.pageIndex + 1} of{' '}
-            {table.getPageCount()}
-          </strong>
-        </Center>
-        <Center height="20px">
-          <Divider orientation="vertical" />
-        </Center>
-        <Center gap={'5px'}>
-          Go to page:
-          <Input
-            width={'100px'}
-            type="number"
-            defaultValue={table.getState().pagination.pageIndex + 1}
-            onChange={e => {
-              const page = e.target.value ? Number(e.target.value) - 1 : 0;
-              if (page >= 0 && page < table.getPageCount())
-                table.setPageIndex(page);
-            }}
-          />
-        </Center>
-        <Select
-          width={'150px'}
-          value={table.getState().pagination.pageSize}
-          onChange={e => {
-            table.setPageSize(Number(e.target.value));
-          }}
-        >
-          {[10, 20, 30, 40, 50].map(pageSize => (
-            <option key={pageSize} value={pageSize}>
-              Show {pageSize}
-            </option>
-          ))}
-        </Select>
-      </HStack>
       </TableContainer>
       <SelectDanceModal onSubmit={addTrack} />
       <SavePlaylistModal onSubmit={savePlaylist} />
