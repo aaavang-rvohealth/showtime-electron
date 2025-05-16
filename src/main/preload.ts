@@ -2,7 +2,7 @@
 /* eslint no-unused-vars: off */
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 
-export type Channels = 'getPlatform' | 'selectAudioFile' | 'validateLibrary' | 'getAudioFilesInDirectory' | 'exportPlaylist';
+export type Channels = 'getPlatform' | 'selectAudioFile' | 'validateLibrary' | 'getAudioFilesInDirectory' | 'exportPlaylist' | 'readAudioFile';
 
 const electronHandler = {
   ipcRenderer: {

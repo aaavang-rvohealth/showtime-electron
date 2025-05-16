@@ -6,21 +6,23 @@ export const GlobalNav = () => {
   const location = useLocation();
   const { pathname } = location;
 
+  const pathBase = pathname.split('/').length == 1 ? '/' : pathname.split('/')[1];
+
   let index;
-  switch (pathname) {
+  switch (pathBase) {
     case '/':
       index = 0;
       break;
-    case '/dances':
+    case 'dances':
       index = 1;
       break;
-    case '/songs':
+    case 'songs':
       index = 2;
       break;
-    case '/playlists':
+    case 'playlists':
       index = 3;
       break;
-    case '/settings':
+    case 'settings':
       index = 4;
       break;
     default:

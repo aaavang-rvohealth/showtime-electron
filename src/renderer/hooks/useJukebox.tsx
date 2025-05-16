@@ -55,7 +55,6 @@ export const useJukebox = (): JukeboxReturnType => {
 };
 
 const Jukebox = ({ state, setState, initialFocusRef }: JukeboxProps) => {
-  console.log('jukebox state', state)
   const [userSettings] = useContext(UserSettingsContext);
   const songPathEncoder = useSongPathEncoder();
   if (!state.showJukebox || !state.song) {

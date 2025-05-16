@@ -44,8 +44,6 @@ export const useUserSettings = () => {
 export const UserSettingsProvider = ({ children }: { children: React.ReactNode }) => {
   const [userSettings, setUserSettings] = useLocalStorage("userSettings", defaultUserSettings);
 
-  console.log('user settings', userSettings)
-
   useEffect(() => {
     window.electron.ipcRenderer.once('getPlatform', (platform: any) => {
       if (platform === 'win32') {

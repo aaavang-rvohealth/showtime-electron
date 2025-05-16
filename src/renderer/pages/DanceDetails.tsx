@@ -141,7 +141,8 @@ export const DanceDetails = () => {
                           setJukeboxState({
                             closeOnEnd: true,
                             showJukebox: true,
-                            song: song
+                            song: song,
+                            variant
                           });
                         }
                       }}>Play</Button>

@@ -56,13 +56,13 @@ export const Playlists = () => {
       header: 'Actions',
       cell: (info) => (
         <HStack gap='5px'>
-          <Button onClick={() => loadPlaylist(info.row.original)}>Load</Button>
-          <Button onClick={() => {
+          <Button colorScheme={'green'} onClick={() => loadPlaylist(info.row.original)}>Load</Button>
+          <Button colorScheme={'blue'} variant={'outline'} onClick={() => {
             setPlaylistToEdit(info.row.original);
             savePlaylistModal.onOpen();
           }}>Edit</Button>
-          <Button onClick={confirmAction(`Delete playlist,  ${info.row.original.title}?`, () => deletePlaylist(info.row.original.id))}>Delete</Button>
-          <Button onClick={() => exportPlaylist(info.row.original)}>Export...</Button>
+          <Button colorScheme={'red'} variant={'outline'} onClick={confirmAction(`Delete playlist,  ${info.row.original.title}?`, () => deletePlaylist(info.row.original.id))}>Delete</Button>
+          <Button colorScheme={'gray'} variant={'outline'} onClick={() => exportPlaylist(info.row.original)}>Export...</Button>
         </HStack>
       )
     })

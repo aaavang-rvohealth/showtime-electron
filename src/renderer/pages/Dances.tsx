@@ -74,30 +74,36 @@ export const Dances = () => {
     columnHelper.display({
       id: 'actions',
       header: 'Actions',
-      cell: (info) => (
-        <HStack gap="15px">
-          <Button colorScheme={'green'} variant={'outline'}
-                  onClick={async () => {
-                    const variant = await database.danceVariants.where('danceId').equals(info.row.original.id).and(v => v.defaultVariant).first();
-                    const song = await database.songs.get(variant!.songId);
-                    setJukeboxState({
-                      showJukebox: true,
-                      dance: info.row.original,
-                      variant,
-                      song
-                    });
-                  }}>Play Default</Button>
-          <Menu>
-            <MenuButton as={Button} rightIcon={<ChevronDownIcon />}>
-              Actions
-            </MenuButton>
-            <MenuList>
-              <MenuItem icon={<MdAppRegistration />} onClick={() => navigate(`/dances/${info.row.original.id}`)}>Edit...</MenuItem>
-              <MenuItem icon={<MdDelete />} onClick={confirmAction(`Delete ${info.row.original.title}?`, () => deleteDance(info.row.original.id))}>Delete</MenuItem>
-            </MenuList>
-          </Menu>
-        </HStack>
-      )
+      cell: (info) => {
+        return (
+          <HStack gap="15px">
+            <Button colorScheme={'green'} variant={'outline'}
+                    onClick={async () => {
+                      const variant = await database.danceVariants.where('danceId').equals(info.row.original.id).and(v => v.defaultVariant).first();
+                      const song = await database.songs.get(variant!.songId);
+                      setJukeboxState({
+                        showJukebox: true,
+                        dance: info.row.original,
+                        variant,
+                        song
+                      });
+                    }}>Play Default</Button>
+            <Button colorScheme={'gray'} variant={'outline'}
+                    onClick={() => navigate(`/dances/${info.row.original.id}`)}>Play Variant...</Button>
+            <Menu>
+              <MenuButton as={Button} rightIcon={<ChevronDownIcon />}>
+                Actions
+              </MenuButton>
+              <MenuList>
+                <MenuItem icon={<MdAppRegistration />}
+                          onClick={() => navigate(`/dances/${info.row.original.id}`)}>Edit...</MenuItem>
+                <MenuItem icon={<MdDelete />}
+                          onClick={confirmAction(`Delete ${info.row.original.title}?`, () => deleteDance(info.row.original.id))}>Delete</MenuItem>
+              </MenuList>
+            </Menu>
+          </HStack>
+        );
+      }
     })
   ], [dances]);
 
@@ -178,7 +184,6 @@ export const Dances = () => {
               {table.getHeaderGroups().map((headerGroup) => (
                 <Tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
-                    // see https://tanstack.com/table/v8/docs/api/core/column-def#meta to type this correctly
                     const meta: any = header.column.columnDef.meta;
                     return (
                       <Th
@@ -219,7 +224,6 @@ export const Dances = () => {
               {table.getRowModel().rows.map((row) => (
                 <Tr key={row.id}>
                   {row.getVisibleCells().map((cell) => {
-                    // see https://tanstack.com/table/v8/docs/api/core/column-def#meta to type this correctly
                     const meta: any = cell.column.columnDef.meta;
                     return (
                       <Td key={cell.id} isNumeric={meta?.isNumeric}>

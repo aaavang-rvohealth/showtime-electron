@@ -1,4 +1,4 @@
-import { ipcMain, dialog } from 'electron';
+import { ipcMain, dialog, net } from 'electron';
 import fs from 'fs';
 import os from 'node:os';
 import { Song } from '../renderer/database';
@@ -42,6 +42,14 @@ export const setupIPC = () => {
       ]
     })
     event.reply('selectAudioFile', paths?.[0])
+  })
+
+  ipcMain.on('readAudioFile', async (event, arg) => {
+    const resp =await  net.fetch('file://' + arg.slice('showtime://'.length))
+    const buffer = await resp.arrayBuffer()
+    event.reply('readAudioFile', {
+      buffer
+    })
   })
 
   ipcMain.on('getAudioFilesInDirectory', async (event, arg) => {

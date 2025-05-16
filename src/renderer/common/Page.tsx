@@ -21,7 +21,7 @@ export const Page = ({ children, name}: PageProps) => {
   const jukeboxDisclosure = useDisclosure();
 
   return (
-    <VStack height={'100%'} width={'100%'} marginTop={'25px'}>
+    <VStack w={'100%'} marginTop={'25px'}>
       <GlobalNav />
       <Heading as={'h1'}>{name}</Heading>
       <Box flexGrow={1} height={'100%'} width={'100%'} padding={'25px'} id={'page-container'}>

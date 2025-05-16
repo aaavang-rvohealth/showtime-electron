@@ -104,6 +104,7 @@
     "react-use": "^17.5.1",
     "rehowl": "^1.0.1",
     "stream-to-blob": "^2.0.1",
+    "tone": "^15.0.4",
     "xmlbuilder": "^15.1.1"
   },
   "devDependencies": {

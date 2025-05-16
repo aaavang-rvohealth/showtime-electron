@@ -3,6 +3,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { useInterval, useKeyPressEvent } from 'react-use';
 import { useHowl } from 'rehowl';
 import { UserSettingsContext } from '../providers/UserSettingsProvider';
+import { PitchShift, Player } from 'tone';
 import { confirmAction } from '../utils/ConfirmAction';
 import { JukeboxContext } from '../providers/JukeboxProvider';
 
@@ -20,11 +21,45 @@ export const AudioPlayer = (props: AudioPlayerHowlProps) => {
   const {setJukeboxState} = useContext(JukeboxContext);
   const [isFading, setIsFading] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  const [startTime, setStartTime] = useState<number | undefined>(undefined);
   const [isPlaying, setIsPlaying] = useState(false);
-  const { howl } = useHowl({
+  const [rate,setRate] = useState(1)
+  const [toneState, setToneState] = useState({
+    player: undefined as Player | undefined,
+    pitchShift: undefined as PitchShift | undefined
+  })
+  const { howl, state } = useHowl({
     src: props.src,
     html5: userSettings.useHTML5Audio,
   })
+
+  useEffect(() => {
+    window.electron.ipcRenderer.once('readAudioFile', async (event: any) => {
+      const ctx = new window.AudioContext();
+      const audioBuffer = await ctx.decodeAudioData(event.buffer);
+      const player = new Player(audioBuffer)
+      const pitchShift = new PitchShift()
+      player.connect(pitchShift)
+      pitchShift.toDestination()
+      setToneState({
+        player,
+        pitchShift
+      })
+    })
+
+    window.electron.ipcRenderer.sendMessage('readAudioFile', props.src)
+  }, [props.src]);
+
+  useEffect(() => {
+    if (toneState.pitchShift && toneState.player) {
+      toneState.player.playbackRate = rate
+      toneState.pitchShift.pitch = shiftToSemitones(rate)
+    }
+  }, [rate]);
+
+  useEffect(() => {
+    console.log('jukebox props', props)
+  }, []);
 
   useEffect(() => {
     if (howl) {
@@ -34,16 +69,30 @@ export const AudioPlayer = (props: AudioPlayerHowlProps) => {
           howl.volume(1)
           howl.play();
           setIsPlaying(true)
+          setStartTime(new Date().getTime())
         }
       });
 
       howl.on("end", () => {
         props.onEnd();
         setCurrentTime(0)
+        setStartTime(undefined)
         setIsPlaying(false)
       });
     }
   }, [howl]);
+
+  useEffect(() => {
+    howl?.rate(rate)
+  }, [rate]);
+
+  const handleIncreaseRate = () => {
+    setRate(parseFloat(Math.min(rate + .05, 4).toFixed(2)))
+  }
+
+  const handleDecreaseRate = () => {
+    setRate(parseFloat(Math.max(rate - .05, .5).toFixed(2 )))
+  }
 
   const handlePlayPause = () => {
     // blur play-pause button
@@ -65,6 +114,7 @@ export const AudioPlayer = (props: AudioPlayerHowlProps) => {
       setIsPlaying(true)
       howl?.volume(1)
       howl?.play();
+      setStartTime(new Date().getTime())
     }
   };
 
@@ -127,6 +177,8 @@ export const AudioPlayer = (props: AudioPlayerHowlProps) => {
     document.getElementById('reset-button')?.blur();
   };
 
+  const shiftToSemitones = (shift: number) => +(12*Math.log2(1/shift)).toFixed(1)
+
   const handleFade = () => {
     toast({
       title: 'Fading out',
@@ -163,6 +215,17 @@ export const AudioPlayer = (props: AudioPlayerHowlProps) => {
         <Button id={'reset-button'} onClick={handleRestart} colorScheme={'red'} variant={'outline'}
                 isDisabled={isPlaying || currentTime <= 0}>Restart</Button>
       </HStack>
+      {!props.showMode && userSettings.useHTML5Audio && <HStack w={'100%'} justifyContent={'space-between'}>
+        <pre>{`Rate: ${rate}x`}</pre>
+        <pre>{`Semitones: ${shiftToSemitones(rate)}`}</pre>
+        <Button id={'play-tone'} onClick={() => {
+          toneState.player?.state === "started" ? toneState.player?.stop() : toneState.player?.start()
+        }} colorScheme={'blue'}>Play Tone</Button>
+        <Button id={'decrease-rate'} onClick={handleDecreaseRate}
+                colorScheme={'gray'}>Decrease Rate</Button>
+        <Button id={'increase-rate'} onClick={handleIncreaseRate}
+                colorScheme={'gray'}>Increase Rate</Button>
+      </HStack>}
       <Text>Press <Kbd>Space</Kbd> to Play/Pause</Text>
     </VStack>
   );

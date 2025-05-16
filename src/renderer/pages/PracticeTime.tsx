@@ -41,10 +41,11 @@ import { JukeboxState } from '../hooks/useJukebox';
 import { useSongPathEncoder } from '../hooks/useSongPathEncoder';
 import { JukeboxContext } from '../providers/JukeboxProvider';
 import { UserSettingsContext, useUserSettings } from '../providers/UserSettingsProvider';
+import { useClickAway, useKeyPressEvent } from 'react-use';
 
 export const PracticeTime = () => {
   const toast = useToast();
-  const { setJukeboxState } = useContext(JukeboxContext);
+  const { jukeboxState, setJukeboxState } = useContext(JukeboxContext);
   const songPathEncoder = useSongPathEncoder();
   const [loaded, setLoaded] = useState(false);
   const [tracks, setTracks] = useState<HydratedDanceVariant[]>([]);
@@ -54,6 +55,11 @@ export const PracticeTime = () => {
   const [selectPlaylistModalDisclosure, SelectPlaylistModal] = useSelectPlaylistModal();
   const [showMode, setShowMode] = useState(false);
   const [userSettings] = useContext(UserSettingsContext)
+  const [clickedRowNumber, setClickedRowNumber] = useState<number | null>(null);
+  const tableRef = useRef(null);
+  useClickAway(tableRef, () => {
+    setClickedRowNumber(null);
+  });
 
   const tracksRef = useRef(tracks);
   useEffect(() => {
@@ -81,18 +87,24 @@ export const PracticeTime = () => {
 
   const columns = useMemo(() => [
     columnHelper.display({
-      id: 'reorder',
-      header: 'Reorder',
+      id: 'order',
+      header: 'Order',
       cell: (info) => (
         <HStack>
           <Text>{info.row.index + 1}</Text>
-          {!showMode && <>
-            <IconButton isDisabled={info.row.index === 0} aria-label={'move-up'} colorScheme={'gray'} variant={'ghost'}
-                        icon={<ArrowUpIcon />} size={'sm'} onClick={() => moveSongUp(info.row.index)} />
-            <IconButton isDisabled={info.row.index >= table.getRowModel().rows.length - 1} aria-label={'move-down'}
-                        colorScheme={'gray'} variant={'ghost'} icon={<ArrowDownIcon />} size={'sm'}
-                        onClick={() => moveSongDown(info.row.index)} />
-          </>}
+          {/*{!showMode && <>*/}
+          {/*  <IconButton isDisabled={info.row.index === 0} aria-label={'move-up'} colorScheme={'gray'} variant={'ghost'}*/}
+          {/*              icon={<ArrowUpIcon />} size={'sm'} onClick={(e) => {*/}
+          {/*                e.stopPropagation();*/}
+          {/*    moveSongUp(info.row.index);*/}
+          {/*  }} />*/}
+          {/*  <IconButton isDisabled={info.row.index >= table.getRowModel().rows.length - 1} aria-label={'move-down'}*/}
+          {/*              colorScheme={'gray'} variant={'ghost'} icon={<ArrowDownIcon />} size={'sm'}*/}
+          {/*              onClick={(e) => {*/}
+          {/*                e.stopPropagation();*/}
+          {/*                moveSongDown(info.row.index);*/}
+          {/*              }} />*/}
+          {/*</>}*/}
         </HStack>
       )
     }),
@@ -123,7 +135,8 @@ export const PracticeTime = () => {
           <Button
             colorScheme={'green'}
             variant={'outline'}
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               const newJukeboxState: JukeboxState = {
                 showMode,
                 closeOnEnd: true,
@@ -138,10 +151,14 @@ export const PracticeTime = () => {
               };
               setJukeboxState(newJukeboxState);
               setCurrentTrackIndex(info.row.index);
+              setClickedRowNumber(null)
             }}
           >Play</Button>
           {!showMode && <Button colorScheme={'red'} variant={'outline'}
-                                onClick={() => deleteRow(info.row.index)}>Delete</Button>}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteRow(info.row.index);
+                                }}>Remove</Button>}
         </HStack>
       )
     })
@@ -211,6 +228,7 @@ export const PracticeTime = () => {
 
   const toggleShow = () => {
     setShowMode(!showMode);
+    setClickedRowNumber(null);
   };
 
   const exportPlaylist = () => {
@@ -245,9 +263,36 @@ export const PracticeTime = () => {
     })
   };
 
+  const handleRowClick = (rowIndex: number) => {
+    if (showMode) {
+      return;
+    }
+    if (clickedRowNumber === rowIndex) {
+      setClickedRowNumber(null);
+    } else {
+      setClickedRowNumber(rowIndex);
+    }
+  }
+
+  useKeyPressEvent('ArrowUp', () => {
+    if (clickedRowNumber !== null && clickedRowNumber > 0 && !jukeboxState.showJukebox && !showMode) {
+      moveSongUp(clickedRowNumber);
+      setClickedRowNumber(clickedRowNumber - 1);
+    }
+  })
+  useKeyPressEvent('ArrowDown', () => {
+    if (clickedRowNumber !== null && clickedRowNumber < tracks.length - 1 && !jukeboxState.showJukebox && !showMode) {
+      moveSongDown(clickedRowNumber);
+      setClickedRowNumber(clickedRowNumber + 1);
+    }
+  })
+  useKeyPressEvent('Escape', () => {
+    setClickedRowNumber(null);
+  })
+
   return (
     <Page name={showMode ? 'Showtime!' : 'Practice Time'}>
-      <TableContainer whiteSpace={'wrap'} width={'100%'}>
+      <TableContainer whiteSpace={'wrap'} width={'100%'} ref={tableRef}>
         <HStack justifyContent={'space-between'}>
           <Flex flexGrow={1}>
             {!showMode &&
@@ -298,7 +343,7 @@ export const PracticeTime = () => {
           </Thead>
           <Tbody>
             {table.getRowModel().rows.map((row) => (
-              <Tr key={row.id}>
+              <Tr key={row.id} onClick={() => handleRowClick(row.index)} boxShadow={clickedRowNumber === row.index ? 'inset 0px 0px 0px 2px gray;' : 'none'}>
                 {row.getVisibleCells().map((cell) => {
                   // see https://tanstack.com/table/v8/docs/api/core/column-def#meta to type this correctly
                   const meta: any = cell.column.columnDef.meta;
